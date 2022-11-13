@@ -1,4 +1,5 @@
-import { MessageBody, SubscribeMessage, WebSocketGateway, WsResponse } from '@nestjs/websockets';
+import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, WsResponse } from '@nestjs/websockets';
+import { Server } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
@@ -7,14 +8,17 @@ import { MessageBody, SubscribeMessage, WebSocketGateway, WsResponse } from '@ne
 })
 export class EventsGateway {
 
+  @WebSocketServer()
+  server: Server;
+
   @SubscribeMessage('eventsChat')
-  handleEvent(@MessageBody() data: Message): WsResponse<Message> {
+  handleEvent(@MessageBody() data: Message) {
 
     if (data.type === TypeMessageEnum.connectUser) {
       data.message = 'Вошел в чат'
     }
 
-    return { event: 'eventsChat', data: data }
+    this.server.emit('eventsChat', data)
   }
 
 }
