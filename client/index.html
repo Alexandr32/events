@@ -1,7 +1,7 @@
 <html>
 
 <head>
-  <script src="https://cdn.socket.io/4.5.3/socket.io.min.js"></script>
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js" integrity="sha384-KAZ4DtjNhLChOB/hxXuKqhMLYvx3b5MlT55xPEiNmREKRzeEm+RVPlTnAn0ajQNs" crossorigin="anonymous"></script>
 
   <script>
 
@@ -120,7 +120,7 @@
         this.user = user;
         user.type = 'connectUser';
         chat.showControls();
-        socket.emit('eventsChat', user);
+        socket.emit('events', user);
       }
 
       // Отправка сообщений
@@ -133,7 +133,7 @@
         this.user.message = message
         this.user.type = 'messageUser'
 
-        socket.emit('eventsChat', this.user)
+        socket.emit('events', this.user)
       }
 
       const socket = io('http://localhost:3000');

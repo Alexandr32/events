@@ -11,7 +11,7 @@ export class EventsGateway {
   @WebSocketServer()
   server: Server;
 
-  @SubscribeMessage('eventsChat')
+  @SubscribeMessage('events')
   handleEvent(@MessageBody() data: Message) {
 
     if (data.type === TypeMessageEnum.connectUser) {
