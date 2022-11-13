@@ -1,0 +1,236 @@
+<html>
+
+<head>
+  <script src="https://cdn.socket.io/4.5.3/socket.io.min.js"></script>
+
+  <script>
+
+    customElements.define('login-chat', class extends HTMLElement {
+
+      #inputName = ''
+
+      connectedCallback() {
+
+        const elem = loginTmpl.content.cloneNode(true)
+
+        const inputName = elem.querySelector('#input-name')
+        const button = elem.querySelector('#loginBtn')
+
+        inputName.addEventListener('input', (event) => {
+
+          this.#inputName = event.data
+
+        })
+
+        button.onclick = () => {
+
+          const user = new User(this.#inputName || '')
+
+          const event = new Event('login-select', { bubbles: true, composed: true })
+          event.value = user
+
+          button.dispatchEvent(event);
+        }
+
+        this.attachShadow({ mode: 'open' }).append(elem);
+      }
+
+    })
+
+    customElements.define('message-chat', class extends HTMLElement {
+
+      connectedCallback() {
+        const elem = msgTmpl.content.cloneNode(true)
+        elem.getElementById('name').innerHTML = this.getAttribute('name')
+        elem.getElementById('message').innerHTML = this.getAttribute('message')
+        this.attachShadow({ mode: 'open' }).append(elem);
+      }
+
+    });
+
+    class User {
+      constructor(name) {
+        this.name = name
+      }
+    }
+
+    class LoginElement {
+
+      #login
+
+      loginUser
+
+      constructor() {
+
+        this.#login = document.getElementsByTagName('login-chat')
+
+        this.#login[0].addEventListener('login-select', event => this.loginUser(event.value))
+      }
+
+    }
+
+    class ChatElement {
+
+      #chat
+      #chatBody
+      #chatControls
+
+      sendEvent
+
+      constructor() {
+        this.#chat = document.getElementById('chat');
+        this.#chatBody = document.getElementById('chat-body')
+        this.#chatControls = document.getElementById('chat-controls')
+
+        document.getElementById('send-message').addEventListener('click', () => {
+
+          const message = document.getElementById('body-message').value
+
+          this.sendEvent(message || '');
+        })
+
+      }
+
+      add(messageChat) {
+        this.#chatBody.appendChild(messageChat)
+      }
+
+      showControls() {
+        this.#chatControls.style.display = 'block';
+      }
+
+      hideControls() {
+        this.#chatControls.style.display = 'none';
+      }
+
+    }
+
+    main = () => {
+
+      let user
+
+      const login = new LoginElement();
+      const chat = new ChatElement();
+
+      chat.hideControls();
+
+      // Подключение пользователя
+      login.loginUser = (user) => {
+        
+        this.user = user;
+        user.type = 'connectUser';
+        chat.showControls();
+        socket.emit('eventsChat', user);
+      }
+
+      // Отправка сообщений
+      chat.sendEvent = (message) => {
+
+        if (!this.user) {
+          return;
+        }
+
+        this.user.message = message
+        this.user.type = 'messageUser'
+
+        socket.emit('eventsChat', this.user)
+      }
+
+      const socket = io('http://localhost:3000');
+
+      socket.on('connect', function () {
+        console.log('connected');
+      });
+
+      socket.on('eventsChat', (user) => {
+
+        // Подписка на сообщения
+        const message = document.createElement('message-chat')
+        message.setAttribute('name', user.name)
+        message.setAttribute('message', user.message)
+        chat.add(message)
+
+      });
+
+      socket.on('disconnect', function () {
+        console.log('Disconnected'); console.log('Disconnected');
+      });
+
+    }
+
+    window.onload = this.main;
+
+  </script>
+
+  <style>
+    .chat-controls {
+      padding: 20px;
+      margin: 10px;
+      border-radius: 10px;
+      box-shadow: 0px 5px 10px 2px rgb(34 60 80 / 20%);
+    }
+
+    message-chat:defined {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+
+  <template id="loginTmpl">
+
+    <style>
+      .loginForm {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 10px;
+        box-shadow: 0px 5px 10px 2px rgb(34 60 80 / 20%);
+      }
+    </style>
+
+    <div id="loginForm" class="loginForm">
+      <div>Введите имя пользователя</div>
+      <input type="text" id="input-name" />
+      <button id="loginBtn">Войти</button>
+    </div>
+
+  </template>
+
+  <template id="msgTmpl">
+    <style>
+      :host {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 10px;
+        box-shadow: 0px 5px 10px 2px rgb(34 60 80 / 20%);
+      }
+
+      .flex {
+        display: flex;
+      }
+    </style>
+    <div class="flex">
+      <div>Пользователь:</div>
+      <div id="name"></div>
+    </div>
+    <div class="flex">
+      <div>Сообщение:</div>
+      <div id="message"></div>
+    </div>
+  </template>
+
+  <div id="chat">
+    <div id="chat-body"></div>
+    <div class="chat-controls" id="chat-controls">
+      <div>Сообщение:</div>
+      <input type="text" id="body-message" />
+      <button id="send-message">Отправить</button>
+    </div>
+  </div>
+
+  <login-chat></login-chat>
+
+</body>
+
+</html>
